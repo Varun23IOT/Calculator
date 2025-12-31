@@ -1,80 +1,88 @@
 import tkinter as tk
-
-def press(v):
-    entry.insert(tk.END, v)
-
-def clear():
-    entry.delete(0, tk.END)
-
-def calc():
-    try:
-        result = eval(entry.get())
-        entry.delete(0, tk.END)
-        entry.insert(0, result)
-    except:
-        entry.delete(0, tk.END)
-        entry.insert(0, "Error")
+from tkinter import ttk
+import re
 
 root = tk.Tk()
 root.title("Calculator")
-root.configure(bg="#1e1e1e")
 root.resizable(False, False)
+root.geometry("320x420+100+200")
+root.configure(bg="#FFFDD0")
 
-entry = tk.Entry(
-    root,
-    font=("Segoe UI", 20),
-    bg="#2d2d2d",
-    fg="white",
-    bd=0,
-    justify="right"
-)
-entry.grid(row=0, column=0, columnspan=4, padx=12, pady=12, ipady=10)
+style = ttk.Style()
+style.theme_use("clam")
+style.configure("Calc.TButton", background="white", foreground="brown",padding=10,font=("Arial",12,"bold"))
+style.map("Calc.TButton", background=[("active", "orange"), ("pressed", "white")])
+style.configure("Clear.TButton", background="#FF3B3B", foreground="white",font=("Arial",12,"bold"))
+style.map("Clear.TButton", background=[("active", "#FF6B6B"), ("pressed", "#D92B2B")])
+style.configure("Calc.TEntry", fieldbackground="black", foreground="white")
+
+display = ttk.Entry(root, font=("Arial", 20), justify="right", style="Calc.TEntry")
+display.grid(row=0, column=0, columnspan=4, sticky="nsew")
 
 buttons = [
-    "7", "8", "9", "/",
-    "4", "5", "6", "*",
-    "1", "2", "3", "-",
-    "0", ".", "=", "+"
+    ["C", "/", "* ",  "<"],
+    ["7", "8", "9 ",  "-"],
+    ["4", "5", "6 ",  "+"],
+    ["1", "2", "3 ",  "."],
+    ["%", "0", "//",  "="],
 ]
 
-r = 1
-c = 0
+def apply_percent():
+    expr = display.get()
+    match = re.search(r'(\d+\.?\d*)$', expr)
+    if match:
+        num = match.group(1)
+        percent = str(float(num) / 100)
+        display.delete(len(expr) - len(num), tk.END)
+        display.insert(tk.END, percent)
 
-for b in buttons:
-    if b == "=":
-        btn = tk.Button(
-            root, text=b, width=5, height=2,
-            font=("Segoe UI", 14),
-            bg="#ff9500", fg="white",
-            command=calc
-        )
-    elif b in ("+", "-", "*", "/"):
-        btn = tk.Button(
-            root, text=b, width=5, height=2,
-            font=("Segoe UI", 14),
-            bg="#ff9500", fg="white",
-            command=lambda x=b: press(x)
-        )
+def click(value):
+    if value == "C":
+        display.delete(0, tk.END)
+
+    elif value == "<":
+        display.delete(len(display.get()) - 1, tk.END)
+
+    elif value == "%":
+        apply_percent()
+
+    elif value == "=":
+        try:
+            result = eval(display.get())
+            display.delete(0, tk.END)
+            display.insert(tk.END, str(result))
+        except:
+            display.delete(0, tk.END)
+            display.insert(tk.END, "Error")
+
     else:
-        btn = tk.Button(
-            root, text=b, width=5, height=2,
-            font=("Segoe UI", 14),
-            bg="#3a3a3a", fg="white",
-            command=lambda x=b: press(x)
-        )
+        display.insert(tk.END, value)
 
-    btn.grid(row=r, column=c, padx=5, pady=5)
-    c += 1
-    if c > 3:
-        c = 0
-        r += 1
+for r in range(1, 6):
+    for c in range(4):
+        text = buttons[r-1][c]
+        if text == " ":
+            continue
 
-clear_btn = tk.Button(
-    root, text="C", width=22, height=2,
-    font=("Segoe UI", 14),
-    bg="#ff453a", fg="white",
-    command=clear
-)
-clear_btn.grid(row=r, column=0, columnspan=4, padx=5, pady=5)
+        if text == "=":
+            btn = ttk.Button(root, text="=", style="Calc.TButton",
+                             command=lambda t="=": click(t))
+            btn.grid(row=r, column=c, rowspan=2, sticky="nsew", padx=2, pady=2)
+
+        elif text == "C":
+            btn = ttk.Button(root, text=text, style="Clear.TButton",
+                             command=lambda t=text: click(t))
+            btn.grid(row=r, column=c, sticky="nsew", padx=2, pady=2)
+
+        else:
+            btn = ttk.Button(root, text=text, style="Calc.TButton",
+                             command=lambda t=text: click(t))
+            btn.grid(row=r, column=c, sticky="nsew", padx=2, pady=2)
+
+for i in range(4):
+    root.grid_columnconfigure(i, weight=1)
+
+for i in range(6):
+    root.grid_rowconfigure(i, weight=1)
 
 root.mainloop()
